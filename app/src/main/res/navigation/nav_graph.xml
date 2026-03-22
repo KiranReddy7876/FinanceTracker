@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/dashboardFragment">
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.financetracker.ui.dashboard.DashboardFragment"
+        android:label="Dashboard">
+        <action
+            android:id="@+id/action_dashboard_to_addTransaction"
+            app:destination="@id/addTransactionFragment"/>
+        <action
+            android:id="@+id/action_dashboard_to_transactions"
+            app:destination="@id/transactionsFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/transactionsFragment"
+        android:name="com.financetracker.ui.transactions.TransactionsFragment"
+        android:label="Transactions">
+        <action
+            android:id="@+id/action_transactions_to_addTransaction"
+            app:destination="@id/addTransactionFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/addTransactionFragment"
+        android:name="com.financetracker.ui.addtransaction.AddTransactionFragment"
+        android:label="Add Transaction"/>
+
+    <fragment
+        android:id="@+id/smsImportFragment"
+        android:name="com.financetracker.ui.smsimport.SmsImportFragment"
+        android:label="SMS Imports"/>
+
+    <fragment
+        android:id="@+id/smsReviewFragment"
+        android:name="com.financetracker.ui.smsreview.SmsReviewFragment"
+        android:label="SMS Review"/>
+
+    <fragment
+        android:id="@+id/accountsFragment"
+        android:name="com.financetracker.ui.accounts.AccountsFragment"
+        android:label="Accounts"/>
+
+    <fragment
+        android:id="@+id/categoriesFragment"
+        android:name="com.financetracker.ui.categories.CategoriesFragment"
+        android:label="Categories"/>
+
+    <fragment
+        android:id="@+id/merchantsFragment"
+        android:name="com.financetracker.ui.merchants.MerchantsFragment"
+        android:label="Merchants"/>
+
+    <fragment
+        android:id="@+id/reportsFragment"
+        android:name="com.financetracker.ui.reports.ReportsFragment"
+        android:label="Reports"/>
+
+    <fragment
+        android:id="@+id/syncFragment"
+        android:name="com.financetracker.ui.sync.SyncFragment"
+        android:label="Sync"/>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.financetracker.ui.settings.SettingsFragment"
+        android:label="Settings"/>
+
+</navigation>

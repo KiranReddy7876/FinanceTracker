@@ -1,0 +1,93 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.financetracker'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.financetracker"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    packaging {
+        resources {
+            excludes += '/META-INF/DEPENDENCIES'
+        }
+    }
+}
+
+dependencies {
+    // AndroidX Core
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.core:core-ktx:1.12.0'
+
+    // Preference
+    implementation 'androidx.preference:preference:1.2.1'
+
+    // Navigation
+    implementation 'androidx.navigation:navigation-fragment:2.7.6'
+    implementation 'androidx.navigation:navigation-ui:2.7.6'
+
+    // Room Database
+    implementation 'androidx.room:room-runtime:2.6.1'
+    annotationProcessor 'androidx.room:room-compiler:2.6.1'
+    implementation 'androidx.room:room-guava:2.6.1'
+
+    // Lifecycle (ViewModel + LiveData)
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime:2.7.0'
+    annotationProcessor 'androidx.lifecycle:lifecycle-compiler:2.7.0'
+
+    // MPAndroidChart
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
+    // Google Drive API
+    implementation 'com.google.android.gms:play-services-auth:21.0.0'
+    implementation('com.google.api-client:google-api-client-android:2.2.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    implementation('com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    implementation 'com.google.http-client:google-http-client-gson:1.43.3'
+
+    // Gson
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // WorkManager (background sync)
+    implementation 'androidx.work:work-runtime:2.9.0'
+
+    // SwipeRefreshLayout
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+
+    // Biometric
+    implementation 'androidx.biometric:biometric:1.1.0'
+}
+
+repositories {
+    maven { url 'https://jitpack.io' }
+}

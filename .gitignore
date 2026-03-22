@@ -1,0 +1,37 @@
+# Gradle
+.gradle/
+build/
+*.apk
+*.ap_
+*.dex
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+
+# Build output
+bin/
+out/
+gen/
+
+# Local properties
+local.properties
+gradle.properties
+
+# Generated files
+.classpath
+.project
+.settings/
+*.class
+
+# Git
+.git/
+
+# Documentation files (optional - keep project docs)
+# *.md
+

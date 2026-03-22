@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Force light appearance even in night mode since we call MODE_NIGHT_NO at runtime -->
+    <style name="Theme.FinanceTracker" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">#4f46e5</item>
+        <item name="colorPrimaryVariant">#3730a3</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#10b981</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#1f2937</item>
+        <item name="android:windowBackground">#f9fafb</item>
+        <item name="android:statusBarColor">#3730a3</item>
+        <!-- Prevent black flash when soft keyboard appears -->
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowIsFloating">false</item>
+    </style>
+</resources>

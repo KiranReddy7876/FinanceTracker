@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Month navigation -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btn_prev_month"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="&lt;"
+                style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+            <TextView
+                android:id="@+id/tv_month_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <Button
+                android:id="@+id/btn_next_month"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="&gt;"
+                style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+        </LinearLayout>
+
+        <!-- Summary card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Income" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                    <TextView android:id="@+id/tv_report_income" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:textSize="15sp" android:textStyle="bold"
+                        android:textColor="@color/income_green" android:text="₹0"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Expense" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                    <TextView android:id="@+id/tv_report_expense" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:textSize="15sp" android:textStyle="bold"
+                        android:textColor="@color/expense_red" android:text="₹0"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Net" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                    <TextView android:id="@+id/tv_report_net" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:textSize="15sp" android:textStyle="bold"
+                        android:text="₹0"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Pie chart -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Spending by Category"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/pie_chart"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Bar chart -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Daily Income vs Expense"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/bar_chart"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
