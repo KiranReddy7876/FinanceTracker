@@ -68,7 +68,13 @@ public class SmsImportConversionService {
             // Use the fresh record with all updated values
             smsImport = freshRecord;
 
-            // Get or create merchant if merchant name exists
+            // Handle TRANSFER type SMS
+            if ("TRANSFER".equals(smsImport.detectedType)) {
+                convertTransferToTransaction(context, smsImport, transactionDao);
+                return;
+            }
+
+            // ...existing code...
             String merchantId = null;
             if (smsImport.merchantName != null && !smsImport.merchantName.isEmpty()) {
                 // Trim merchant name for consistency
@@ -187,5 +193,71 @@ public class SmsImportConversionService {
             }
         }).start();
     }
-}
 
+    /**
+     * Convert a TRANSFER type SMS import to a transaction
+     * Handles both self transfers (to another account) and friend transfers (loan, settle, gift)
+     */
+    private static void convertTransferToTransaction(Context context, SmsImport smsImport, TransactionDao transactionDao) {
+        try {
+            // Determine transfer type based on what fields are populated
+            String transferType = null;
+            String transferToAccountId = null;
+            String recipientName = null;
+
+            // If transferToAccountId is set, it's a SELF transfer
+            if (smsImport.transferToAccountId != null && !smsImport.transferToAccountId.isEmpty()) {
+                transferType = "SELF";
+                transferToAccountId = smsImport.transferToAccountId;
+                Log.d(TAG, "Converting SELF transfer SMS to transaction");
+            }
+            // Otherwise, use merchantName as recipientName (stored friend name)
+            else if (smsImport.merchantName != null && !smsImport.merchantName.isEmpty()) {
+                recipientName = smsImport.merchantName.trim();
+                
+                // Determine transfer subtype based on context or default to GIFT
+                // In the UI, transferType is stored in the categoryId field during confirmation
+                // For SMS, we'll default to detecting based on amount or use the categoryId if set
+                if ("SETTLE_PAYMENT".equals(smsImport.categoryId)) {
+                    transferType = "SETTLE_PAYMENT";
+                } else {
+                    transferType = "GIFT"; // Default to GIFT for friend transfers from SMS
+                }
+                Log.d(TAG, "Converting " + transferType + " transfer SMS to transaction, recipient: " + recipientName);
+            } else {
+                Log.w(TAG, "TRANSFER type SMS missing transfer details (no toAccountId or friendName)");
+                return;
+            }
+
+            // Create TRANSFER transaction
+            Transaction transaction = new Transaction();
+            transaction.uuid = UUID.randomUUID().toString();
+            transaction.accountId = smsImport.accountId;
+            transaction.type = "TRANSFER";
+            transaction.amount = smsImport.amount;
+            transaction.date = smsImport.date;
+            transaction.transferType = transferType;
+            transaction.transferToAccountId = transferToAccountId;
+            transaction.recipientName = recipientName;
+            transaction.categoryId = smsImport.categoryId; // For SETTLE_PAYMENT category
+            transaction.referenceId = smsImport.uuid;
+            transaction.note = smsImport.smsText != null ? smsImport.smsText : "";
+            transaction.createdAt = System.currentTimeMillis();
+            transaction.updatedAt = System.currentTimeMillis();
+            transaction.deleted = false;
+
+            try {
+                transactionDao.insert(transaction);
+                Log.d(TAG, "Successfully converted TRANSFER SMS import to transaction. " +
+                        "Amount: " + transaction.amount + ", Type: " + transferType +
+                        ", From Account: " + transaction.accountId +
+                        ", To Account: " + (transferToAccountId != null ? transferToAccountId : "N/A") +
+                        ", Recipient: " + (recipientName != null ? recipientName : "N/A"));
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to insert TRANSFER transaction: " + e.getMessage(), e);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in convertTransferToTransaction: " + e.getMessage(), e);
+        }
+    }
+}

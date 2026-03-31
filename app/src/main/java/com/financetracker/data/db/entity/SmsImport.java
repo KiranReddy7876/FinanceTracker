@@ -17,6 +17,7 @@ public class SmsImport {
     public long date;
     public String accountId;      // user assigns in review queue
     public String categoryId;     // user assigns in review queue
+    public String transferToAccountId;  // for TRANSFER type - destination account
     public String merchantName;   // extracted merchant/payee name from SMS
     public String status;         // PENDING, CONFIRMED, IGNORED
     public long createdAt;

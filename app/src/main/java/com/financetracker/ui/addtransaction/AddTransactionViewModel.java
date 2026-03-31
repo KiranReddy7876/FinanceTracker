@@ -80,6 +80,109 @@ public class AddTransactionViewModel extends AndroidViewModel {
         }
     }
 
+    public void saveTransfer(String fromAccountId, String toAccountId, double amount, long date, String note) {
+        if (fromAccountId == null || fromAccountId.isEmpty() || toAccountId == null || toAccountId.isEmpty()) {
+            errorMessage.setValue("Please select both from and to accounts");
+            return;
+        }
+        if (fromAccountId.equals(toAccountId)) {
+            errorMessage.setValue("From and to accounts must be different");
+            return;
+        }
+        if (amount <= 0) {
+            errorMessage.setValue("Amount must be greater than zero");
+            return;
+        }
+
+        if (editingTransaction != null && "TRANSFER".equals(editingTransaction.type)) {
+            editingTransaction.accountId = fromAccountId;
+            editingTransaction.type = "TRANSFER";
+            editingTransaction.amount = amount;
+            editingTransaction.date = date;
+            editingTransaction.note = note;
+            editingTransaction.transferToAccountId = toAccountId;
+            transactionRepo.update(editingTransaction, () -> saveSuccess.postValue(true));
+        } else {
+            Transaction t = new Transaction();
+            t.uuid = UUID.randomUUID().toString();
+            t.accountId = fromAccountId;
+            t.type = "TRANSFER";
+            t.amount = amount;
+            t.date = date;
+            t.note = note;
+            t.transferToAccountId = toAccountId;
+            t.createdAt = System.currentTimeMillis();
+            t.updatedAt = System.currentTimeMillis();
+            t.deleted = false;
+            transactionRepo.insert(t, () -> saveSuccess.postValue(true));
+        }
+    }
+
+    public void saveSelfTransfer(String fromAccountId, String toAccountId, 
+                                double amount, long date, String note) {
+        if (fromAccountId == null || fromAccountId.isEmpty() || 
+            toAccountId == null || toAccountId.isEmpty()) {
+            errorMessage.setValue("Please select both accounts");
+            return;
+        }
+        if (fromAccountId.equals(toAccountId)) {
+            errorMessage.setValue("Accounts must be different");
+            return;
+        }
+        if (amount <= 0) {
+            errorMessage.setValue("Amount must be greater than zero");
+            return;
+        }
+
+        Transaction t = new Transaction();
+        t.uuid = UUID.randomUUID().toString();
+        t.accountId = fromAccountId;
+        t.type = "TRANSFER";
+        t.transferType = "SELF";
+        t.transferToAccountId = toAccountId;
+        t.amount = amount;
+        t.date = date;
+        t.note = note;
+        t.createdAt = System.currentTimeMillis();
+        t.updatedAt = System.currentTimeMillis();
+        t.deleted = false;
+        
+        transactionRepo.insert(t, () -> saveSuccess.postValue(true));
+    }
+
+    public void saveFriendTransfer(String fromAccountId, String friendName, 
+                                  String transferSubType, String categoryId, 
+                                  double amount, long date, String note) {
+        if (friendName == null || friendName.isEmpty()) {
+            errorMessage.setValue("Friend's name is required");
+            return;
+        }
+        if ("SETTLE_PAYMENT".equals(transferSubType) && (categoryId == null || categoryId.isEmpty())) {
+            errorMessage.setValue("Please select expense category for settlement");
+            return;
+        }
+        if (amount <= 0) {
+            errorMessage.setValue("Amount must be greater than zero");
+            return;
+        }
+
+        Transaction t = new Transaction();
+        t.uuid = UUID.randomUUID().toString();
+        t.accountId = fromAccountId;
+        t.type = "TRANSFER";
+        t.transferType = transferSubType;  // "LOAN_OUT", "SETTLE_PAYMENT", or "GIFT"
+        t.recipientName = friendName;
+        t.categoryId = categoryId;  // Store category for settle payment
+        t.amount = amount;
+        t.date = date;
+        t.note = note;
+        t.createdAt = System.currentTimeMillis();
+        t.updatedAt = System.currentTimeMillis();
+        t.deleted = false;
+        
+        transactionRepo.insert(t, () -> saveSuccess.postValue(true));
+    }
+
     public void setEditingTransaction(Transaction t) {
         this.editingTransaction = t;
     }

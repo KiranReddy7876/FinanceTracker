@@ -45,6 +45,15 @@ public class SmsProcessingWorker extends Worker {
 
             Log.d(TAG, "Processing SMS: amount=" + amount + ", type=" + type + ", merchant=" + merchantName);
 
+            // Check if this is a credit card payment or cash transaction
+            boolean isCreditCardPayment = SmsParser.isCreditCardPayment(body);
+            boolean isCashWithdrawal = SmsParser.isCashTransaction(body);
+            
+            if (isCreditCardPayment || isCashWithdrawal) {
+                Log.d(TAG, "✓ Detected TRANSFER transaction - CC Payment: " + isCreditCardPayment + ", Cash: " + isCashWithdrawal);
+                type = "TRANSFER";  // Override type to TRANSFER
+            }
+
             // Get database instance
             AppDatabase db = null;
             try {
@@ -107,6 +116,25 @@ public class SmsProcessingWorker extends Worker {
                     Log.e(TAG, "Step 2: Error looking up merchant", e);
                 }
             }
+            
+            // Step 2b: For TRANSFER type, extract destination account
+            String transferToAccountId = null;
+            if ("TRANSFER".equals(type)) {
+                String destAccountNumber = SmsParser.extractTransferDestinationAccount(body);
+                if (destAccountNumber != null && SmsAccountNumberExtractor.isValidAccountNumber(destAccountNumber)) {
+                    try {
+                        Account destAccount = db.accountDao().getByAccountNumber(destAccountNumber);
+                        if (destAccount != null) {
+                            transferToAccountId = destAccount.uuid;
+                            Log.d(TAG, "Step 2b: ✓ Destination account found: " + destAccount.name + " (ID: " + transferToAccountId + ")");
+                        } else {
+                            Log.d(TAG, "Step 2b: ✗ Destination account not found for: " + destAccountNumber);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Step 2b: Error finding destination account", e);
+                    }
+                }
+            }
 
             // Step 3: Build SMS import record
             SmsImport record = new SmsImport();
@@ -118,6 +146,7 @@ public class SmsProcessingWorker extends Worker {
             record.accountId = matchedAccountId;
             record.categoryId = autoCategory;
             record.merchantName = trimmedMerchantName;
+            record.transferToAccountId = transferToAccountId;  // Set for TRANSFER transactions
             record.createdAt = System.currentTimeMillis();
             record.updatedAt = System.currentTimeMillis();
             record.deleted = false;
@@ -125,12 +154,16 @@ public class SmsProcessingWorker extends Worker {
             Log.d(TAG, "Step 3: Built SMS record - UUID: " + record.uuid);
 
             // Step 4: Determine status and decide flow
-            boolean autoConfirm = (matchedAccountId != null && autoCategory != null);
+            // TRANSFER transactions should ALWAYS require user review for categorization
+            // Only auto-confirm EXPENSE/INCOME types with categorized merchants
+            boolean autoConfirm = (matchedAccountId != null && autoCategory != null && !"TRANSFER".equals(type));
             record.status = autoConfirm ? "CONFIRMED" : "PENDING";
             
-            Log.d(TAG, "Step 4: Status=" + record.status + 
-                       " (hasAccount=" + (matchedAccountId != null) + 
-                       ", hasCategory=" + (autoCategory != null) + ")");
+            Log.d(TAG, "Step 4: Status=" + record.status +
+                       " (hasAccount=" + (matchedAccountId != null) +
+                       ", hasCategory=" + (autoCategory != null) +
+                       ", isTransfer=" + "TRANSFER".equals(type) + 
+                       ", autoConfirm=" + autoConfirm + ")");
 
             try {
                 if (autoConfirm) {
@@ -144,7 +177,13 @@ public class SmsProcessingWorker extends Worker {
                         transaction.amount = amount;
                         transaction.date = date;
                         transaction.categoryId = autoCategory;
-                        
+
+                        // For TRANSFER type, set destination account
+                        if ("TRANSFER".equals(type)) {
+                            transaction.transferToAccountId = transferToAccountId;
+                            Log.d(TAG, "Step 5: Transfer transaction - from: " + matchedAccountId + " to: " + transferToAccountId);
+                        }
+
                         // IMPORTANT: Set merchantId by looking up the merchant we found earlier
                         String merchantId = null;
                         if (trimmedMerchantName != null && !trimmedMerchantName.isEmpty()) {
@@ -158,7 +197,7 @@ public class SmsProcessingWorker extends Worker {
                                 Log.e(TAG, "Step 5: Error finding merchant by name", e);
                             }
                         }
-                        
+
                         transaction.merchantId = merchantId; // Set actual merchant ID for nickname lookup
                         String merchantPart = (trimmedMerchantName != null && !trimmedMerchantName.isEmpty())
                                 ? " - " + trimmedMerchantName : "";
@@ -166,7 +205,7 @@ public class SmsProcessingWorker extends Worker {
                         transaction.createdAt = System.currentTimeMillis();
                         transaction.updatedAt = System.currentTimeMillis();
                         transaction.deleted = false;
-                        
+
                         db.transactionDao().insert(transaction);
                         Log.d(TAG, "Step 5: ✓ TRANSACTION CREATED DIRECTLY with merchantId: " + merchantId);
                         Log.d(TAG, "=== SMS Processing Complete - TRANSACTION CREATED ===");

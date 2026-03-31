@@ -23,8 +23,27 @@ public class DatabaseInitializer {
                 // Step 1: Get Room database instance
                 // Room will handle table creation and versioning
                 Log.d(TAG, "Step 1: Getting Room database instance...");
-                AppDatabase db = AppDatabase.getInstance(context);
-                Log.d(TAG, "Step 1: Database instance obtained");
+                AppDatabase db = null;
+                try {
+                    db = AppDatabase.getInstance(context);
+                    Log.d(TAG, "Step 1: Database instance obtained");
+                } catch (Exception e) {
+                    Log.e(TAG, "ERROR: Failed to get database instance: " + e.getMessage(), e);
+                    // Try one more time after a delay
+                    try {
+                        Thread.sleep(2000);
+                        db = AppDatabase.getInstance(context);
+                        Log.d(TAG, "Step 1: Database instance obtained (on retry)");
+                    } catch (Exception retryError) {
+                        Log.e(TAG, "CRITICAL: Database initialization failed on retry", retryError);
+                        return; // Cannot continue without database
+                    }
+                }
+                
+                if (db == null) {
+                    Log.e(TAG, "ERROR: Database instance is null");
+                    return;
+                }
                 
                 // Give database time to stabilize
                 Thread.sleep(1000);
@@ -38,18 +57,24 @@ public class DatabaseInitializer {
                     // If no accounts, seed the database
                     if (accountCount == 0) {
                         Log.d(TAG, "Step 3: No accounts found. Seeding default data...");
-                        DatabaseSeeder.seedDefaults(db);
-                        
-                        // Wait for seeding to complete
-                        Thread.sleep(2000);
-                        
-                        int newCount = db.accountDao().getCount();
-                        Log.d(TAG, "After seeding, account count: " + newCount);
-                        
-                        if (newCount > 0) {
-                            Log.d(TAG, "SUCCESS: Database seeding completed with " + newCount + " accounts");
-                        } else {
-                            Log.w(TAG, "WARNING: Seeding did not work - no accounts created, will try on next access");
+                        try {
+                            DatabaseSeeder.seedDefaults(db);
+                            
+                            // Wait for seeding to complete
+                            Thread.sleep(2000);
+                            
+                            int newCount = db.accountDao().getCount();
+                            Log.d(TAG, "After seeding, account count: " + newCount);
+                            
+                            if (newCount > 0) {
+                                Log.d(TAG, "SUCCESS: Database seeding completed with " + newCount + " accounts");
+                            } else {
+                                Log.w(TAG, "WARNING: Seeding did not work - no accounts created, will try on next access");
+                            }
+                        } catch (Exception seedError) {
+                            Log.e(TAG, "ERROR during seeding: " + seedError.getMessage(), seedError);
+                            seedError.printStackTrace();
+                            // Continue - database tables exist even if seeding failed
                         }
                     } else {
                         Log.d(TAG, "Database already has data: " + accountCount + " accounts");
@@ -59,16 +84,21 @@ public class DatabaseInitializer {
                     initialized = true;
                     
                 } catch (Exception e) {
-                    Log.e(TAG, "ERROR: Cannot access database", e);
+                    Log.e(TAG, "ERROR: Cannot access database: " + e.getMessage(), e);
                     e.printStackTrace();
                 }
                 
             } catch (InterruptedException e) {
-                Log.e(TAG, "Database initialization interrupted", e);
+                Log.e(TAG, "Database initialization interrupted: " + e.getMessage(), e);
                 e.printStackTrace();
             } catch (Exception e) {
-                Log.e(TAG, "ERROR during database initialization", e);
+                Log.e(TAG, "CRITICAL ERROR during database initialization: " + e.getMessage(), e);
                 e.printStackTrace();
+                // Log the full stack trace for system service errors
+                if (e.getMessage() != null && e.getMessage().contains("persistent_data_block")) {
+                    Log.e(TAG, "This is a system service error - app will continue with cached database");
+                    initialized = true; // Mark as initialized despite error
+                }
             }
         }, "DatabaseInitializer-Thread").start();
     }

@@ -20,6 +20,7 @@ public class DashboardViewModel extends AndroidViewModel {
     private final MediatorLiveData<Long> dateRangeTrigger = new MediatorLiveData<>();
     private final LiveData<Double> monthlyIncome;
     private final LiveData<Double> monthlyExpense;
+    private final LiveData<Double> monthlyTransfer;
     private LiveData<List<Transaction>> currentMonthTransactions;
 
     public DashboardViewModel(Application application) {
@@ -47,6 +48,12 @@ public class DashboardViewModel extends AndroidViewModel {
             long[] dateRange = getMonthDateRange();
             return transactionRepository.getTotalExpenseLive(dateRange[0], dateRange[1]);
         });
+
+        // Setup monthly transfer using switchMap to always query current month
+        monthlyTransfer = Transformations.switchMap(dateRangeTrigger, ignored -> {
+            long[] dateRange = getMonthDateRange();
+            return transactionRepository.getTotalTransferLive(dateRange[0], dateRange[1]);
+        });
     }
 
     private long[] getMonthDateRange() {
@@ -72,15 +79,15 @@ public class DashboardViewModel extends AndroidViewModel {
         return currentMonthTransactions;
     }
 
-    public LiveData<List<Transaction>> getAllTransactions() {
-        return transactionRepository.getAllActive();
-    }
-
     public LiveData<Double> getMonthlyIncome() {
         return monthlyIncome;
     }
 
     public LiveData<Double> getMonthlyExpense() {
         return monthlyExpense;
+    }
+
+    public LiveData<Double> getMonthlyTransfer() {
+        return monthlyTransfer;
     }
 }

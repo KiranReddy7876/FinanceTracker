@@ -19,7 +19,9 @@ public class Transaction {
     public String merchantId;
     public String note;
     public String referenceId;   // for bank statement duplicate detection
-    public String transferToAccountId; // used when type = TRANSFER
+    public String transferToAccountId; // used when type = TRANSFER and SELF transfer
+    public String transferType;  // "SELF", "LOAN_OUT", "SETTLE_PAYMENT", "GIFT"
+    public String recipientName; // for friend transfers: name of friend
     public long createdAt;
     public long updatedAt;
     public boolean deleted;

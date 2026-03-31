@@ -105,4 +105,31 @@ public class SmsImportRepository {
             }
         });
     }
+
+    /**
+     * Update transfer SMS import with transfer-specific details and confirm
+     * For SELF transfer: updates transferToAccountId
+     * For FRIEND transfer: updates merchantName (friend name) and categoryId (for settle payment)
+     */
+    public void updateTransferAndConfirm(String smsImportId, String fromAccountId, String toAccountId,
+                                        String friendName, String transferSubType, String settleCategoryId) {
+        executor.execute(() -> {
+            SmsImport smsImport = smsImportDao.getById(smsImportId);
+            if (smsImport != null) {
+                smsImport.accountId = fromAccountId;
+                smsImport.transferToAccountId = toAccountId;
+                smsImport.merchantName = friendName;  // Store friend name in merchantName field
+                smsImport.categoryId = settleCategoryId;  // Store settle category if applicable
+                smsImport.updatedAt = System.currentTimeMillis();
+                smsImportDao.update(smsImport);
+                
+                // Confirm and convert to transaction
+                smsImportDao.updateStatus(smsImportId, "CONFIRMED", System.currentTimeMillis());
+                SmsImport updatedSmsImport = smsImportDao.getById(smsImportId);
+                if (updatedSmsImport != null) {
+                    SmsImportConversionService.convertToTransaction(context, updatedSmsImport);
+                }
+            }
+        });
+    }
 }

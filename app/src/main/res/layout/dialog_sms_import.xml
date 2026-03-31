@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -86,12 +87,14 @@
 
     </ScrollView>
 
-    <!-- Merchant name (editable, user can paste from SMS) -->
+    <!-- Merchant name (editable, user can paste from SMS) - Hidden for TRANSFER -->
     <LinearLayout
+        android:id="@+id/ll_merchant_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginBottom="12dp">
+        android:layout_marginBottom="12dp"
+        android:visibility="visible">
 
         <TextView
             android:layout_width="wrap_content"
@@ -113,6 +116,32 @@
 
     </LinearLayout>
 
+    <!-- Category Selection - Hidden for TRANSFER -->
+    <LinearLayout
+        android:id="@+id/ll_category_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="12dp"
+        android:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Category (Optional)"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_category"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/outlined_bg"
+            android:paddingHorizontal="8dp"/>
+
+    </LinearLayout>
+
+    <!-- Account Selection -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -128,19 +157,151 @@
         android:paddingHorizontal="8dp"
         android:layout_marginBottom="12dp"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Select Category (Optional)"
-        android:textSize="12sp"
-        android:layout_marginBottom="4dp"/>
-
-    <Spinner
-        android:id="@+id/spinner_category"
+    <!-- Transfer Type Selection - Visible only for TRANSFER type -->
+    <LinearLayout
+        android:id="@+id/ll_transfer_type_container"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="@drawable/outlined_bg"
-        android:paddingHorizontal="8dp"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Transfer Type"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp"/>
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggle_transfer_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_self_transfer"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Self"
+                android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_loan_out"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Loan"
+                android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_settle_payment"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Settle"
+                android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_gift"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Gift"
+                android:textSize="12sp"/>
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    </LinearLayout>
+
+    <!-- Transfer To Account - Visible only for SELF transfer -->
+    <LinearLayout
+        android:id="@+id/ll_transfer_to_account"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Transfer To Account"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_transfer_to_account"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/outlined_bg"
+            android:paddingHorizontal="8dp"/>
+
+    </LinearLayout>
+
+    <!-- Friend Name - Visible for LOAN, SETTLE, GIFT transfers -->
+    <LinearLayout
+        android:id="@+id/ll_friend_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Friend's Name"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_friend_name"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:inputType="text"
+            android:hint="Enter friend's name"
+            android:padding="8dp"
+            android:background="@drawable/outlined_bg"
+            android:textSize="14sp"/>
+
+    </LinearLayout>
+
+    <!-- Settle Category - Visible only for SETTLE_PAYMENT transfer -->
+    <LinearLayout
+        android:id="@+id/ll_settle_category"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Expense Category"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_settle_category"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/outlined_bg"
+            android:paddingHorizontal="8dp"/>
+
+    </LinearLayout>
 
 </LinearLayout>
 

@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.*;
 import com.financetracker.R;
 import com.financetracker.data.db.entity.*;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import java.text.NumberFormat;
 import java.util.*;
 
@@ -67,6 +68,19 @@ public class SmsImportFragment extends Fragment {
         Spinner spinnerAccount = dialogView.findViewById(R.id.spinner_account);
         Spinner spinnerCategory = dialogView.findViewById(R.id.spinner_category);
 
+        // Transfer-specific views
+        MaterialButtonToggleGroup toggleTransferType = dialogView.findViewById(R.id.toggle_transfer_type);
+        Spinner spinnerTransferToAccount = dialogView.findViewById(R.id.spinner_transfer_to_account);
+        EditText etFriendName = dialogView.findViewById(R.id.et_friend_name);
+        Spinner spinnerSettleCategory = dialogView.findViewById(R.id.spinner_settle_category);
+
+        LinearLayout llMerchantContainer = dialogView.findViewById(R.id.ll_merchant_container);
+        LinearLayout llCategoryContainer = dialogView.findViewById(R.id.ll_category_container);
+        LinearLayout llTransferTypeContainer = dialogView.findViewById(R.id.ll_transfer_type_container);
+        LinearLayout llTransferToAccount = dialogView.findViewById(R.id.ll_transfer_to_account);
+        LinearLayout llFriendName = dialogView.findViewById(R.id.ll_friend_name);
+        LinearLayout llSettleCategory = dialogView.findViewById(R.id.ll_settle_category);
+
         // Display SMS details
         NumberFormat fmt = NumberFormat.getCurrencyInstance(new Locale("en", "IN"));
         tvAmount.setText(fmt.format(smsImport.amount));
@@ -89,6 +103,7 @@ public class SmsImportFragment extends Fragment {
                     android.R.layout.simple_spinner_item, names);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerAccount.setAdapter(adapter);
+                spinnerTransferToAccount.setAdapter(adapter);
 
                 // Select account if already matched
                 if (smsImport.accountId != null) {
@@ -103,8 +118,8 @@ public class SmsImportFragment extends Fragment {
         });
 
         // Store loaded categories in a holder so the Confirm button can access them
-        // getCategoriesByType().getValue() on a NEW LiveData always returns null!
         final List<Category>[] loadedCategories = new List[]{new ArrayList<>()};
+        final List<Category>[] loadedSettleCategories = new List[]{new ArrayList<>()};
 
         // Load categories that match the detected transaction type
         viewModel.getCategoriesByType(smsImport.detectedType).observe(getViewLifecycleOwner(), categories -> {
@@ -129,6 +144,45 @@ public class SmsImportFragment extends Fragment {
                         }
                     }
                 }
+            }
+        });
+
+        // Load EXPENSE categories for settle payment
+        viewModel.getCategoriesByType("EXPENSE").observe(getViewLifecycleOwner(), categories -> {
+            if (categories != null) {
+                loadedSettleCategories[0] = categories;
+                List<String> names = new ArrayList<>();
+                names.add("— Select Category —");
+                for (Category c : categories) {
+                    names.add(c.name);
+                }
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                    android.R.layout.simple_spinner_item, names);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerSettleCategory.setAdapter(adapter);
+            }
+        });
+
+        // Update UI visibility based on transaction type
+        updateTransferUI(smsImport.detectedType, dialogView);
+
+        // Track transfer type selection in dialog
+        final int[] selectedTransferType = {0};  // 0=SELF, 1=LOAN_OUT, 2=SETTLE, 3=GIFT
+        
+        // Transfer type toggle listener
+        toggleTransferType.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                if (checkedId == R.id.btn_self_transfer) {
+                    selectedTransferType[0] = 0;
+                } else if (checkedId == R.id.btn_loan_out) {
+                    selectedTransferType[0] = 1;
+                } else if (checkedId == R.id.btn_settle_payment) {
+                    selectedTransferType[0] = 2;
+                } else {
+                    selectedTransferType[0] = 3;
+                }
+                // Update UI for this transfer type
+                updateTransferTypeUI(selectedTransferType[0], dialogView);
             }
         });
 
@@ -160,8 +214,56 @@ public class SmsImportFragment extends Fragment {
                     viewModel.updateMerchant(smsImport.uuid, editedMerchant);
                 }
 
-                // Update SMS import with selected account and category, THEN confirm atomically
-                viewModel.updateAndConfirmImport(smsImport.uuid, selectedAccountId, selectedCategoryId);
+                // Handle transfer type SMS
+                if ("TRANSFER".equals(smsImport.detectedType)) {
+                    // Validate and get transfer-specific fields
+                    if (selectedTransferType[0] == 0) {
+                        // SELF TRANSFER - need to_account
+                        int toAccountPos = spinnerTransferToAccount.getSelectedItemPosition();
+                        if (toAccountPos < 0 || toAccountPos >= accounts.size()) {
+                            Toast.makeText(requireContext(), "Please select transfer to account", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        if (accountPos == toAccountPos) {
+                            Toast.makeText(requireContext(), "From and to accounts must be different", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        String toAccountId = accounts.get(toAccountPos).uuid;
+                        viewModel.updateAndConfirmTransfer(smsImport.uuid, selectedAccountId, toAccountId, null, null, null);
+                    } else {
+                        // FRIEND TRANSFER (LOAN, SETTLE, GIFT)
+                        String friendNameStr = etFriendName.getText().toString().trim();
+                        if (friendNameStr.isEmpty()) {
+                            Toast.makeText(requireContext(), "Please enter friend's name", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        String transferSubType;
+                        String settleCategoryId = null;
+                        
+                        if (selectedTransferType[0] == 1) {
+                            transferSubType = "LOAN_OUT";
+                        } else if (selectedTransferType[0] == 2) {
+                            transferSubType = "SETTLE_PAYMENT";
+                            // Get settle category
+                            int settleCatPos = spinnerSettleCategory.getSelectedItemPosition();
+                            if (settleCatPos > 0 && settleCatPos - 1 < loadedSettleCategories[0].size()) {
+                                settleCategoryId = loadedSettleCategories[0].get(settleCatPos - 1).uuid;
+                            }
+                            if (settleCategoryId == null) {
+                                Toast.makeText(requireContext(), "Please select expense category for settle payment", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                        } else {
+                            transferSubType = "GIFT";
+                        }
+                        
+                        viewModel.updateAndConfirmTransfer(smsImport.uuid, selectedAccountId, null, friendNameStr, transferSubType, settleCategoryId);
+                    }
+                } else {
+                    // Regular EXPENSE/INCOME transaction
+                    viewModel.updateAndConfirmImport(smsImport.uuid, selectedAccountId, selectedCategoryId);
+                }
                 
                 Toast.makeText(requireContext(), "Transaction recorded", Toast.LENGTH_SHORT).show();
             })
@@ -185,5 +287,56 @@ public class SmsImportFragment extends Fragment {
         }
         dialog.show();
     }
+
+    /**
+     * Update UI visibility based on transaction type
+     */
+    private void updateTransferUI(String transactionType, View dialogView) {
+        LinearLayout llMerchantContainer = dialogView.findViewById(R.id.ll_merchant_container);
+        LinearLayout llCategoryContainer = dialogView.findViewById(R.id.ll_category_container);
+        LinearLayout llTransferTypeContainer = dialogView.findViewById(R.id.ll_transfer_type_container);
+
+        if ("TRANSFER".equals(transactionType)) {
+            // Hide merchant and category fields for TRANSFER
+            llMerchantContainer.setVisibility(View.GONE);
+            llCategoryContainer.setVisibility(View.GONE);
+            // Show transfer type selector
+            llTransferTypeContainer.setVisibility(View.VISIBLE);
+            // Set default transfer type to SELF
+            MaterialButtonToggleGroup toggle = dialogView.findViewById(R.id.toggle_transfer_type);
+            toggle.check(R.id.btn_self_transfer);
+            // Update UI immediately to show Transfer To Account field for SELF
+            updateTransferTypeUI(0, dialogView);
+        } else {
+            // Show merchant and category for EXPENSE/INCOME
+            llMerchantContainer.setVisibility(View.VISIBLE);
+            llCategoryContainer.setVisibility(View.VISIBLE);
+            // Hide transfer options
+            llTransferTypeContainer.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Update transfer-specific UI based on selected transfer type
+     * 0 = SELF, 1 = LOAN_OUT, 2 = SETTLE_PAYMENT, 3 = GIFT
+     */
+    private void updateTransferTypeUI(int transferType, View dialogView) {
+        LinearLayout llTransferToAccount = dialogView.findViewById(R.id.ll_transfer_to_account);
+        LinearLayout llFriendName = dialogView.findViewById(R.id.ll_friend_name);
+        LinearLayout llSettleCategory = dialogView.findViewById(R.id.ll_settle_category);
+
+        boolean isFriendTransfer = (transferType != 0);
+        boolean isSettlePayment = (transferType == 2);
+
+        // SELF transfer shows to_account field
+        llTransferToAccount.setVisibility(!isFriendTransfer ? View.VISIBLE : View.GONE);
+        
+        // LOAN, SETTLE, GIFT show friend_name field
+        llFriendName.setVisibility(isFriendTransfer ? View.VISIBLE : View.GONE);
+        
+        // SETTLE shows settle_category field
+        llSettleCategory.setVisibility(isSettlePayment ? View.VISIBLE : View.GONE);
+    }
 }
+
 

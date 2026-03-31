@@ -18,19 +18,27 @@ public class FinanceTrackerApp extends Application {
 
         Log.d(TAG, "FinanceTrackerApp.onCreate() called");
 
-        // Force light mode — app does not support dark theme
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        
-        // Initialize database first
-        DatabaseInitializer.initialize(this);
-        
-        Log.d(TAG, "SMS Receiver should be registered for: android.provider.Telephony.SMS_RECEIVED");
-        
         try {
-            scheduleSyncWorker();
+            // Force light mode — app does not support dark theme
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            
+            // Initialize database first
+            DatabaseInitializer.initialize(this);
+            
+            Log.d(TAG, "SMS Receiver should be registered for: android.provider.Telephony.SMS_RECEIVED");
+            
+            try {
+                scheduleSyncWorker();
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to schedule sync worker", e);
+                e.printStackTrace();
+                // Continue app startup even if WorkManager fails
+            }
         } catch (Exception e) {
+            // Catch all errors during app initialization including system service errors
+            Log.e(TAG, "ERROR during app initialization: " + e.getMessage(), e);
             e.printStackTrace();
-            // Continue app startup even if WorkManager fails
+            // App will still start - this prevents immediate crashes
         }
     }
 

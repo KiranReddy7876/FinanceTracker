@@ -87,4 +87,14 @@ public class SmsImportViewModel extends AndroidViewModel {
     public void updateAndConfirmImport(String smsImportId, String accountId, String categoryId) {
         smsImportRepo.updateAccountAndCategoryThenConfirm(smsImportId, accountId, categoryId);
     }
+
+    /**
+     * Update transfer SMS import with transfer details and confirm
+     * For SELF transfer: requires toAccountId
+     * For FRIEND transfer (LOAN, SETTLE, GIFT): requires friendName and transferSubType
+     */
+    public void updateAndConfirmTransfer(String smsImportId, String fromAccountId, String toAccountId, 
+                                        String friendName, String transferSubType, String settleCategoryId) {
+        smsImportRepo.updateTransferAndConfirm(smsImportId, fromAccountId, toAccountId, friendName, transferSubType, settleCategoryId);
+    }
 }

@@ -17,22 +17,22 @@ public interface TransactionDao {
     @Query("UPDATE transactions SET deleted = 1, updatedAt = :updatedAt WHERE uuid = :uuid")
     void softDelete(String uuid, long updatedAt);
 
-    @Query("SELECT * FROM transactions WHERE deleted = 0 ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE deleted = 0 ORDER BY createdAt DESC")
     LiveData<List<Transaction>> getAllActive();
 
-    @Query("SELECT * FROM transactions WHERE deleted = 0 ORDER BY date DESC LIMIT :limit")
+    @Query("SELECT * FROM transactions WHERE deleted = 0 ORDER BY createdAt DESC LIMIT :limit")
     LiveData<List<Transaction>> getRecent(int limit);
 
-    @Query("SELECT * FROM transactions WHERE deleted = 0 AND accountId = :accountId ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND accountId = :accountId ORDER BY createdAt DESC")
     LiveData<List<Transaction>> getByAccount(String accountId);
 
-    @Query("SELECT * FROM transactions WHERE deleted = 0 AND date BETWEEN :start AND :end ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND date BETWEEN :start AND :end ORDER BY createdAt DESC")
     LiveData<List<Transaction>> getByDateRange(long start, long end);
 
-    @Query("SELECT * FROM transactions WHERE deleted = 0 AND categoryId = :categoryId ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND categoryId = :categoryId ORDER BY createdAt DESC")
     LiveData<List<Transaction>> getByCategory(String categoryId);
 
-    @Query("SELECT * FROM transactions WHERE deleted = 0 AND (note LIKE :q OR referenceId LIKE :q) ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND (note LIKE :q OR referenceId LIKE :q) ORDER BY createdAt DESC")
     LiveData<List<Transaction>> search(String q);
 
     @Query("SELECT * FROM transactions WHERE updatedAt > :since")
@@ -47,11 +47,45 @@ public interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE uuid = :uuid AND deleted = 0")
     Transaction getById(String uuid);
 
+    // Transfer type queries
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' " +
+           "AND transferType = 'SELF' ORDER BY createdAt DESC")
+    LiveData<List<Transaction>> getSelfTransfers();
+
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' " +
+           "AND transferType = 'LOAN_OUT' ORDER BY createdAt DESC")
+    LiveData<List<Transaction>> getLoanOuts();
+
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' " +
+           "AND transferType = 'SETTLE_PAYMENT' ORDER BY createdAt DESC")
+    LiveData<List<Transaction>> getSettlePayments();
+
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' " +
+           "AND transferType = 'GIFT' ORDER BY createdAt DESC")
+    LiveData<List<Transaction>> getGifts();
+
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' " +
+           "AND recipientName = :friendName ORDER BY createdAt DESC")
+    LiveData<List<Transaction>> getTransfersWithFriend(String friendName);
+
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' " +
+           "AND transferType = 'SETTLE_PAYMENT' AND categoryId = :categoryId ORDER BY createdAt DESC")
+    LiveData<List<Transaction>> getSettlePaymentsByCategory(String categoryId);
+
     @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'INCOME' AND date BETWEEN :start AND :end")
     LiveData<Double> getTotalIncomeLive(long start, long end);
 
     @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'EXPENSE' AND date BETWEEN :start AND :end")
     LiveData<Double> getTotalExpenseLive(long start, long end);
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' AND date BETWEEN :start AND :end")
+    double getTotalTransfer(long start, long end);
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' AND date BETWEEN :start AND :end")
+    LiveData<Double> getTotalTransferLive(long start, long end);
+
+    @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' ORDER BY createdAt DESC LIMIT :limit")
+    LiveData<List<Transaction>> getRecentTransfers(int limit);
 
     @Query("SELECT categoryId, SUM(amount) as total FROM transactions WHERE deleted = 0 AND type = 'EXPENSE' AND date BETWEEN :start AND :end GROUP BY categoryId ORDER BY total DESC")
     List<CategoryTotal> getCategoryTotals(long start, long end);

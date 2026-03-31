@@ -61,6 +61,7 @@ public class DashboardFragment extends Fragment {
 
             TextView tvIncome = view.findViewById(R.id.tv_monthly_income);
             TextView tvExpense = view.findViewById(R.id.tv_monthly_expense);
+            TextView tvTransfer = view.findViewById(R.id.tv_monthly_transfer);
             TextView tvSmsBadge = view.findViewById(R.id.tv_sms_badge);
 
             viewModel.recentTransactions.observe(getViewLifecycleOwner(), transactions -> {
@@ -80,6 +81,12 @@ public class DashboardFragment extends Fragment {
             viewModel.getMonthlyExpense().observe(getViewLifecycleOwner(), expense -> {
                 if (tvExpense != null && expense != null) {
                     tvExpense.setText(currencyFmt.format(expense));
+                }
+            });
+
+            viewModel.getMonthlyTransfer().observe(getViewLifecycleOwner(), transfer -> {
+                if (tvTransfer != null && transfer != null) {
+                    tvTransfer.setText(currencyFmt.format(transfer));
                 }
             });
 

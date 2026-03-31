@@ -85,6 +85,18 @@ public class TransactionRepository {
         return transactionDao.getTotalExpense(start, end);
     }
 
+    public double getTotalTransfer(long start, long end) {
+        return transactionDao.getTotalTransfer(start, end);
+    }
+
+    public LiveData<Double> getTotalTransferLive(long start, long end) {
+        return transactionDao.getTotalTransferLive(start, end);
+    }
+
+    public LiveData<List<Transaction>> getRecentTransfers(int limit) {
+        return transactionDao.getRecentTransfers(limit);
+    }
+
     public LiveData<Double> getTotalIncomeLive(long start, long end) {
         return transactionDao.getTotalIncomeLive(start, end);
     }

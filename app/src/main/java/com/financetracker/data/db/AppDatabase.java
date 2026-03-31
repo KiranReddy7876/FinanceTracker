@@ -15,7 +15,7 @@ import com.financetracker.data.db.entity.*;
         SmsImport.class,
         SyncLog.class
     },
-    version = 8,
+    version = 10,
     exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -41,6 +41,11 @@ public abstract class AppDatabase extends RoomDatabase {
                         AppDatabase.class,
                         "finance_tracker.db"
                     )
+                    // Register all migrations from DatabaseMigrations class
+                    // These preserve user data during schema updates
+                    .addMigrations(DatabaseMigrations.getAllMigrations())
+                    // Fallback to destructive migration only for development/untracked versions
+                    // Will NOT be triggered if explicit migration exists
                     .fallbackToDestructiveMigration()
                     .addCallback(new RoomDatabase.Callback() {
                         @Override
