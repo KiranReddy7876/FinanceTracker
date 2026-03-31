@@ -23,10 +23,10 @@ public class AccountWithBalance {
     
     /**
      * Calculate the current balance of the account
-     * Formula: Opening Balance + Income - Expenses
+     * Formula: Current Balance is now stored directly in the account
      */
     public double getCurrentBalance() {
-        return account.openingBalance + totalIncome - totalExpense;
+        return account.currentBalance;
     }
     
     /**

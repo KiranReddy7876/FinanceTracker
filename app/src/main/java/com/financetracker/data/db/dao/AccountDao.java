@@ -35,15 +35,17 @@ public interface AccountDao {
     @Query("SELECT COUNT(*) FROM accounts WHERE deleted = 0")
     int getCount();
 
-    @Query("""
-        SELECT a.*, 
-               COALESCE(SUM(CASE WHEN t.type = 'INCOME' THEN t.amount ELSE 0 END), 0) as totalIncome,
-               COALESCE(SUM(CASE WHEN t.type = 'EXPENSE' THEN t.amount ELSE 0 END), 0) as totalExpense
-        FROM accounts a
-        LEFT JOIN transactions t ON a.uuid = t.accountId AND t.deleted = 0
-        WHERE a.deleted = 0
-        GROUP BY a.uuid
-        ORDER BY a.name ASC
-    """)
-    LiveData<List<com.financetracker.data.db.entity.AccountWithBalance>> getAllActiveWithBalance();
+    // Get account first, update it, then save it back (Room will properly notify LiveData)
+    @Transaction
+    default void updateBalance(String accountId, double amount, long updatedAt) {
+        Account account = getById(accountId);
+        if (account != null) {
+            account.currentBalance = account.currentBalance + amount;
+            account.updatedAt = updatedAt;
+            update(account);
+        }
+    }
+
+    @Query("SELECT * FROM accounts WHERE deleted = 0 ORDER BY name ASC")
+    LiveData<List<Account>> getAllActiveWithBalance();
 }

@@ -7,13 +7,13 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import com.financetracker.R;
-import com.financetracker.data.db.entity.AccountWithBalance;
+import com.financetracker.data.db.entity.Account;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-public class AccountAdapter extends ListAdapter<AccountWithBalance, AccountAdapter.ViewHolder> {
+public class AccountAdapter extends ListAdapter<Account, AccountAdapter.ViewHolder> {
 
-    public interface OnClickListener { void onClick(AccountWithBalance accountWithBalance); }
+    public interface OnClickListener { void onClick(Account account); }
     private final OnClickListener listener;
     private final NumberFormat fmt = NumberFormat.getCurrencyInstance(new Locale("en", "IN"));
 
@@ -22,14 +22,12 @@ public class AccountAdapter extends ListAdapter<AccountWithBalance, AccountAdapt
         this.listener = listener;
     }
 
-    private static final DiffUtil.ItemCallback<AccountWithBalance> DIFF = new DiffUtil.ItemCallback<AccountWithBalance>() {
-        @Override public boolean areItemsTheSame(@NonNull AccountWithBalance a, @NonNull AccountWithBalance b) { 
-            return a.account.uuid.equals(b.account.uuid); 
+    private static final DiffUtil.ItemCallback<Account> DIFF = new DiffUtil.ItemCallback<Account>() {
+        @Override public boolean areItemsTheSame(@NonNull Account a, @NonNull Account b) { 
+            return a.uuid.equals(b.uuid); 
         }
-        @Override public boolean areContentsTheSame(@NonNull AccountWithBalance a, @NonNull AccountWithBalance b) { 
-            return a.account.updatedAt == b.account.updatedAt && 
-                   a.totalIncome == b.totalIncome && 
-                   a.totalExpense == b.totalExpense; 
+        @Override public boolean areContentsTheSame(@NonNull Account a, @NonNull Account b) { 
+            return a.updatedAt == b.updatedAt && a.currentBalance == b.currentBalance; 
         }
     };
 
@@ -41,15 +39,25 @@ public class AccountAdapter extends ListAdapter<AccountWithBalance, AccountAdapt
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder h, int position) {
-        AccountWithBalance awb = getItem(position);
-        h.tvName.setText(awb.account.name);
-        String typeWithNumber = awb.account.type;
-        if (awb.account.accountNumberLast4 != null && !awb.account.accountNumberLast4.isEmpty()) {
-            typeWithNumber += " •••" + awb.account.accountNumberLast4;
+        Account account = getItem(position);
+        h.tvName.setText(account.name);
+        String typeWithNumber = account.type;
+        if (account.accountNumberLast4 != null && !account.accountNumberLast4.isEmpty()) {
+            typeWithNumber += " •••" + account.accountNumberLast4;
         }
         h.tvType.setText(typeWithNumber);
-        h.tvBalance.setText(fmt.format(awb.getCurrentBalance()));
-        h.itemView.setOnClickListener(v -> listener.onClick(awb));
+        
+        // Handle negative balance display properly
+        double balance = account.currentBalance;
+        String balanceText;
+        if (balance < 0) {
+            // For negative balances, format the absolute value and add negative sign
+            balanceText = "- " + fmt.format(Math.abs(balance));
+        } else {
+            balanceText = fmt.format(balance);
+        }
+        h.tvBalance.setText(balanceText);
+        h.itemView.setOnClickListener(v -> listener.onClick(account));
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -62,3 +70,5 @@ public class AccountAdapter extends ListAdapter<AccountWithBalance, AccountAdapt
         }
     }
 }
+
+

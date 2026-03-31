@@ -204,4 +204,13 @@ public class AddTransactionViewModel extends AndroidViewModel {
             transactionRepo.delete(uuid, () -> saveSuccess.postValue(true));
         });
     }
+
+    /**
+     * Get categories filtered by transaction type
+     * @param type EXPENSE or INCOME
+     * @return LiveData list of categories for that type
+     */
+    public LiveData<List<Category>> getCategoriesByType(String type) {
+        return categoryRepo.getByType(type);
+    }
 }

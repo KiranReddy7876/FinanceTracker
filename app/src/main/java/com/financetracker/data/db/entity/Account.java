@@ -13,7 +13,7 @@ public class Account {
 
     public String name;
     public String type;                // CASH, BANK, CREDIT_CARD, WALLET
-    public double openingBalance;
+    public double currentBalance;      // Updated with each transaction
     public String currency;
     public String accountNumberLast4;  // Last 4 digits of account number (from SMS)
     public long createdAt;
@@ -23,11 +23,11 @@ public class Account {
     public Account() {}
 
     public Account(@NonNull String uuid, String name, String type,
-                   double openingBalance, String currency) {
+                   double currentBalance, String currency) {
         this.uuid = uuid;
         this.name = name;
         this.type = type;
-        this.openingBalance = openingBalance;
+        this.currentBalance = currentBalance;
         this.currency = currency;
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = System.currentTimeMillis();

@@ -11,7 +11,7 @@ import android.util.Log;
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DatabaseHelper";
     private static final String DATABASE_NAME = "finance_tracker.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 11;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -41,7 +41,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + "uuid TEXT PRIMARY KEY NOT NULL,"
                     + "name TEXT,"
                     + "type TEXT,"
-                    + "openingBalance REAL NOT NULL,"
+                    + "currentBalance REAL NOT NULL,"
                     + "currency TEXT,"
                     + "accountNumberLast4 TEXT,"
                     + "createdAt INTEGER NOT NULL,"

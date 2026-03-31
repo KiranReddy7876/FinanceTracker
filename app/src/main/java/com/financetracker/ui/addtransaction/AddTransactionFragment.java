@@ -140,8 +140,9 @@ public class AddTransactionFragment extends Fragment {
             populateFormIfEditing();
         });
 
-        // Category dropdown
-        viewModel.categories.observe(getViewLifecycleOwner(), categories -> {
+        // Category dropdown - observes current transaction type
+        String initialType = getSelectedType();
+        viewModel.getCategoriesByType(initialType).observe(getViewLifecycleOwner(), categories -> {
             categoryList = categories;
             List<String> names = new ArrayList<>();
             names.add("— No Category —");
@@ -185,6 +186,21 @@ public class AddTransactionFragment extends Fragment {
         toggleType.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
                 updateUIForTransactionType(view, btnSave);
+                
+                // Reload categories for the new transaction type
+                String selectedType = getSelectedType();
+                selectedCategoryPos = 0;  // Reset to "No Category"
+                viewModel.getCategoriesByType(selectedType).observe(getViewLifecycleOwner(), categories -> {
+                    categoryList = categories;
+                    List<String> names = new ArrayList<>();
+                    names.add("— No Category —");
+                    for (Category c : categories) names.add(c.name);
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                            android.R.layout.simple_list_item_1, names);
+                    acCategory.setAdapter(adapter);
+                    acSettleCategory.setAdapter(adapter);
+                    acCategory.setText(adapter.getItem(0), false);  // Reset to "No Category"
+                });
             }
         });
 

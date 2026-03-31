@@ -6,7 +6,6 @@ import com.financetracker.data.db.AppDatabase;
 import com.financetracker.data.db.dao.AccountDao;
 import com.financetracker.data.db.dao.SyncLogDao;
 import com.financetracker.data.db.entity.Account;
-import com.financetracker.data.db.entity.AccountWithBalance;
 import com.financetracker.data.db.entity.SyncLog;
 import java.util.List;
 import java.util.UUID;
@@ -54,7 +53,7 @@ public class AccountRepository {
         return accountDao.getAllActive();
     }
 
-    public LiveData<List<AccountWithBalance>> getAllActiveWithBalance() {
+    public LiveData<List<Account>> getAllActiveWithBalance() {
         return accountDao.getAllActiveWithBalance();
     }
 

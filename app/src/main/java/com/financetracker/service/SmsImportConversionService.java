@@ -9,6 +9,7 @@ import com.financetracker.data.db.dao.TransactionDao;
 import com.financetracker.data.db.entity.Merchant;
 import com.financetracker.data.db.entity.SmsImport;
 import com.financetracker.data.db.entity.Transaction;
+import com.financetracker.data.repository.TransactionRepository;
 import java.util.List;
 import java.util.UUID;
 
@@ -132,12 +133,19 @@ public class SmsImportConversionService {
             transaction.deleted = false;
 
             try {
-                transactionDao.insert(transaction);
-                Log.d(TAG, "Successfully converted SMS import to transaction. " +
-                        "Amount: " + transaction.amount + ", Type: " + transaction.type +
-                        ", Account: " + transaction.accountId +
-                        ", Merchant: " + (smsImport.merchantName != null ? smsImport.merchantName : "None") +
-                        ", Category: " + (smsImport.categoryId != null ? smsImport.categoryId : "None"));
+                // Store final references for lambda usage
+                final Transaction finalTransaction = transaction;
+                final SmsImport finalSmsImport = smsImport;
+                
+                // Use TransactionRepository to ensure balance updates happen
+                TransactionRepository transactionRepo = new TransactionRepository(context);
+                transactionRepo.insert(finalTransaction, () -> 
+                    Log.d(TAG, "Successfully converted SMS import to transaction. " +
+                            "Amount: " + finalTransaction.amount + ", Type: " + finalTransaction.type +
+                            ", Account: " + finalTransaction.accountId +
+                            ", Merchant: " + (finalSmsImport.merchantName != null ? finalSmsImport.merchantName : "None") +
+                            ", Category: " + (finalSmsImport.categoryId != null ? finalSmsImport.categoryId : "None"))
+                );
             } catch (Exception e) {
                 Log.e(TAG, "Failed to insert transaction: " + e.getMessage(), e);
             }
@@ -247,12 +255,21 @@ public class SmsImportConversionService {
             transaction.deleted = false;
 
             try {
-                transactionDao.insert(transaction);
-                Log.d(TAG, "Successfully converted TRANSFER SMS import to transaction. " +
-                        "Amount: " + transaction.amount + ", Type: " + transferType +
-                        ", From Account: " + transaction.accountId +
-                        ", To Account: " + (transferToAccountId != null ? transferToAccountId : "N/A") +
-                        ", Recipient: " + (recipientName != null ? recipientName : "N/A"));
+                // Store final references for lambda usage
+                final Transaction finalTransaction = transaction;
+                final String finalTransferType = transferType;
+                final String finalTransferToAccountId = transferToAccountId;
+                final String finalRecipientName = recipientName;
+                
+                // Use TransactionRepository to ensure balance updates happen for both accounts
+                TransactionRepository transactionRepo = new TransactionRepository(context);
+                transactionRepo.insert(finalTransaction, () -> 
+                    Log.d(TAG, "Successfully converted TRANSFER SMS import to transaction. " +
+                            "Amount: " + finalTransaction.amount + ", Type: " + finalTransferType +
+                            ", From Account: " + finalTransaction.accountId +
+                            ", To Account: " + (finalTransferToAccountId != null ? finalTransferToAccountId : "N/A") +
+                            ", Recipient: " + (finalRecipientName != null ? finalRecipientName : "N/A"))
+                );
             } catch (Exception e) {
                 Log.e(TAG, "Failed to insert TRANSFER transaction: " + e.getMessage(), e);
             }

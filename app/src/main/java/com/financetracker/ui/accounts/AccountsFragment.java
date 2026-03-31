@@ -37,10 +37,10 @@ public class AccountsFragment extends Fragment {
 
         RecyclerView rv = view.findViewById(R.id.rv_accounts);
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new AccountAdapter(accountWithBalance -> showEditDialog(accountWithBalance.account));
+        adapter = new AccountAdapter(account -> showEditDialog(account));
         rv.setAdapter(adapter);
 
-        viewModel.accounts.observe(getViewLifecycleOwner(), accountsWithBalance -> adapter.submitList(accountsWithBalance));
+        viewModel.accounts.observe(getViewLifecycleOwner(), accounts -> adapter.submitList(accounts));
 
         FloatingActionButton fab = view.findViewById(R.id.fab_add_account);
         fab.setOnClickListener(v -> showAddDialog());
@@ -89,7 +89,7 @@ public class AccountsFragment extends Fragment {
         TextInputEditText etAccountNumber = dialogView.findViewById(R.id.et_account_number);
 
         etName.setText(account.name);
-        etBalance.setText(String.valueOf(account.openingBalance));
+        etBalance.setText(String.valueOf(account.currentBalance));
         if (account.accountNumberLast4 != null && !account.accountNumberLast4.isEmpty()) {
             etAccountNumber.setText(account.accountNumberLast4);
         }
@@ -107,7 +107,7 @@ public class AccountsFragment extends Fragment {
                 account.name = etName.getText() != null ? etName.getText().toString() : account.name;
                 account.type = types[spinnerType.getSelectedItemPosition()];
                 String balStr = etBalance.getText() != null ? etBalance.getText().toString() : "0";
-                account.openingBalance = balStr.isEmpty() ? 0 : Double.parseDouble(balStr);
+                account.currentBalance = balStr.isEmpty() ? 0 : Double.parseDouble(balStr);
                 account.accountNumberLast4 = etAccountNumber.getText() != null ? etAccountNumber.getText().toString() : "";
                 viewModel.updateAccount(account);
             })

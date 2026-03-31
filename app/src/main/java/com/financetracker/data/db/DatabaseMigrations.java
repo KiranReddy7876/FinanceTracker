@@ -62,6 +62,60 @@ public class DatabaseMigrations {
     };
 
     /**
+     * Migration: Rename openingBalance to currentBalance in accounts table
+     * Updates balance tracking to store current balance instead of just opening balance
+     * This allows instant balance updates after transactions without complex calculations
+     */
+    public static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            Log.d(TAG, "Executing migration: v10 → v11 (Rename openingBalance to currentBalance)");
+            try {
+                // SQLite doesn't support renaming columns directly, so we need to:
+                // 1. Create new table with correct schema
+                // 2. Copy data
+                // 3. Drop old table
+                // 4. Rename new table
+                
+                database.execSQL(
+                    "ALTER TABLE accounts RENAME TO accounts_old"
+                );
+                Log.d(TAG, "  ✓ Renamed accounts table to accounts_old");
+                
+                database.execSQL(
+                    "CREATE TABLE accounts (" +
+                    "uuid TEXT PRIMARY KEY NOT NULL," +
+                    "name TEXT," +
+                    "type TEXT," +
+                    "currentBalance REAL NOT NULL," +
+                    "currency TEXT," +
+                    "accountNumberLast4 TEXT," +
+                    "createdAt INTEGER NOT NULL," +
+                    "updatedAt INTEGER NOT NULL," +
+                    "deleted INTEGER NOT NULL)"
+                );
+                Log.d(TAG, "  ✓ Created new accounts table with currentBalance");
+                
+                // Copy data from old table to new table
+                database.execSQL(
+                    "INSERT INTO accounts (uuid, name, type, currentBalance, currency, accountNumberLast4, createdAt, updatedAt, deleted) " +
+                    "SELECT uuid, name, type, openingBalance, currency, accountNumberLast4, createdAt, updatedAt, deleted FROM accounts_old"
+                );
+                Log.d(TAG, "  ✓ Migrated data from accounts_old to accounts");
+                
+                // Drop old table
+                database.execSQL("DROP TABLE accounts_old");
+                Log.d(TAG, "  ✓ Dropped accounts_old table");
+                
+                Log.d(TAG, "✓ Migration v10→v11 completed - data preserved");
+            } catch (Exception e) {
+                Log.e(TAG, "✗ Migration v10→v11 failed: " + e.getMessage(), e);
+                throw new RuntimeException("Migration v10→v11 failed", e);
+            }
+        }
+    };
+
+    /**
      * Add future migrations here following the same pattern
      * Example:
      * public static final Migration MIGRATION_9_10 = new Migration(9, 10) {
@@ -80,7 +134,8 @@ public class DatabaseMigrations {
         return new Migration[]{
             MIGRATION_8_9,
             MIGRATION_9_10,
-            // Add MIGRATION_10_11 here when created
+            MIGRATION_10_11,
+            // Add MIGRATION_11_12 here when created
             // etc...
         };
     }
