@@ -97,8 +97,8 @@ public class ReportsFragment extends Fragment {
         Map<String, Float> categoryTotals = new LinkedHashMap<>();
         for (Transaction t : transactions) {
             if ("EXPENSE".equals(t.type)) {
-                String label = t.categoryId != null ? t.categoryId.substring(0, 8) : "Uncategorized";
-                categoryTotals.merge(label, (float) t.amount, Float::sum);
+                String categoryName = viewModel.getCategoryName(t.categoryId);
+                categoryTotals.merge(categoryName, (float) t.amount, Float::sum);
             }
         }
 

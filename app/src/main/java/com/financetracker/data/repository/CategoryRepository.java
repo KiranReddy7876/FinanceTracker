@@ -65,6 +65,10 @@ public class CategoryRepository {
         return categoryDao.getModifiedSince(since);
     }
 
+    public Category getById(String uuid) {
+        return categoryDao.getById(uuid);
+    }
+
     private void logSync(String entityId, String entityType, String action) {
         SyncLog log = new SyncLog();
         log.uuid = UUID.randomUUID().toString();

@@ -62,6 +62,7 @@ public class DashboardViewModel extends AndroidViewModel {
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         long start = cal.getTimeInMillis();
         long end = System.currentTimeMillis();
         return new long[]{start, end};

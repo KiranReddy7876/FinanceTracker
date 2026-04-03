@@ -104,12 +104,18 @@ public class AccountsFragment extends Fragment {
             .setTitle("Edit Account")
             .setView(dialogView)
             .setPositiveButton("Save", (d, w) -> {
-                account.name = etName.getText() != null ? etName.getText().toString() : account.name;
-                account.type = types[spinnerType.getSelectedItemPosition()];
+                String name = etName.getText() != null ? etName.getText().toString() : account.name;
+                String type = types[spinnerType.getSelectedItemPosition()];
                 String balStr = etBalance.getText() != null ? etBalance.getText().toString() : "0";
-                account.currentBalance = balStr.isEmpty() ? 0 : Double.parseDouble(balStr);
-                account.accountNumberLast4 = etAccountNumber.getText() != null ? etAccountNumber.getText().toString() : "";
-                viewModel.updateAccount(account);
+                double balance = balStr.isEmpty() ? 0 : Double.parseDouble(balStr);
+                String accountNumber = etAccountNumber.getText() != null ? etAccountNumber.getText().toString() : "";
+                // Create a NEW copy - do NOT mutate original account object!
+                // Mutating the original causes DiffUtil to see no change when Room returns fresh data
+                Account updated = new Account(account.uuid, name, type, balance,
+                    account.currency != null ? account.currency : "INR");
+                updated.accountNumberLast4 = accountNumber;
+                updated.createdAt = account.createdAt;
+                viewModel.updateAccount(updated);
             })
             .setNeutralButton("Delete", (d, w) -> viewModel.deleteAccount(account.uuid))
             .setNegativeButton("Cancel", null)

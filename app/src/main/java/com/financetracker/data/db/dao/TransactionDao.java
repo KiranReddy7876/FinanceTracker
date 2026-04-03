@@ -78,10 +78,10 @@ public interface TransactionDao {
     @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'EXPENSE' AND date BETWEEN :start AND :end")
     LiveData<Double> getTotalExpenseLive(long start, long end);
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' AND date BETWEEN :start AND :end")
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' AND transferType = 'SELF' AND date BETWEEN :start AND :end")
     double getTotalTransfer(long start, long end);
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' AND date BETWEEN :start AND :end")
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' AND transferType = 'SELF' AND date BETWEEN :start AND :end")
     LiveData<Double> getTotalTransferLive(long start, long end);
 
     @Query("SELECT * FROM transactions WHERE deleted = 0 AND type = 'TRANSFER' ORDER BY createdAt DESC LIMIT :limit")
