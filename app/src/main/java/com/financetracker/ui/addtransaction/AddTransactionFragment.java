@@ -51,6 +51,7 @@ public class AddTransactionFragment extends Fragment {
 
     private TextInputEditText etAmount, etNote, etDate;
     private AutoCompleteTextView acAccount, acCategory, acMerchant;
+    private AutoCompleteTextView acFromAccount, acToAccount;
     private MaterialButtonToggleGroup toggleType;
 
     @Nullable @Override
@@ -80,6 +81,8 @@ public class AddTransactionFragment extends Fragment {
         acAccount   = view.findViewById(R.id.spinner_account);
         acCategory  = view.findViewById(R.id.spinner_category);
         acMerchant  = view.findViewById(R.id.spinner_merchant);
+        acFromAccount = view.findViewById(R.id.spinner_from_account);
+        acToAccount   = view.findViewById(R.id.spinner_to_account);
         toggleType  = view.findViewById(R.id.toggle_type);
         Button btnSave   = view.findViewById(R.id.btn_save);
         Button btnDelete = view.findViewById(R.id.btn_delete);
@@ -294,18 +297,15 @@ public class AddTransactionFragment extends Fragment {
     }
 
     private void setupTransferAccountSpinners(View view, ArrayAdapter<String> adapter, List<String> names) {
-        AutoCompleteTextView acFromAccount = view.findViewById(R.id.spinner_from_account);
-        AutoCompleteTextView acToAccount = view.findViewById(R.id.spinner_to_account);
-        
         if (acFromAccount != null && acToAccount != null) {
             acFromAccount.setAdapter(adapter);
             acToAccount.setAdapter(adapter);
-            
+
             if (selectedFromAccountPos < names.size())
                 acFromAccount.setText(adapter.getItem(selectedFromAccountPos), false);
             if (selectedToAccountPos < names.size())
                 acToAccount.setText(adapter.getItem(selectedToAccountPos), false);
-            
+
             acFromAccount.setOnItemClickListener((parent, v, pos, id) -> selectedFromAccountPos = pos);
             acToAccount.setOnItemClickListener((parent, v, pos, id) -> selectedToAccountPos = pos);
         }
@@ -336,33 +336,93 @@ public class AddTransactionFragment extends Fragment {
         else if ("TRANSFER".equals(tx.type)) toggleType.check(R.id.btn_transfer);
         else                                 toggleType.check(R.id.btn_expense);
 
-        // Account
-        for (int i = 0; i < accountList.size(); i++) {
-            if (accountList.get(i).uuid.equals(tx.accountId)) {
-                selectedAccountPos = i;
-                acAccount.setText(accountList.get(i).name + " (" + accountList.get(i).type + ")", false);
-                break;
+        if ("TRANSFER".equals(tx.type)) {
+            // ── Restore transfer sub-type toggle ──────────────────────────
+            boolean isSelf = "SELF".equals(tx.transferType);
+            if (isSelf) {
+                selectedTransferType = 0;
+                toggleTransferType.check(R.id.btn_self_transfer);
+            } else if ("LOAN_OUT".equals(tx.transferType)) {
+                selectedTransferType = 1;
+                toggleTransferType.check(R.id.btn_loan_out);
+            } else if ("SETTLE_PAYMENT".equals(tx.transferType)) {
+                selectedTransferType = 2;
+                toggleTransferType.check(R.id.btn_settle_payment);
+            } else {
+                selectedTransferType = 3;
+                toggleTransferType.check(R.id.btn_gift);
             }
-        }
 
-        // Category
-        if (tx.categoryId != null && !categoryList.isEmpty()) {
-            for (int i = 0; i < categoryList.size(); i++) {
-                if (categoryList.get(i).uuid.equals(tx.categoryId)) {
-                    selectedCategoryPos = i + 1;
-                    acCategory.setText(categoryList.get(i).name, false);
+            // ── Restore From account ──────────────────────────────────────
+            for (int i = 0; i < accountList.size(); i++) {
+                if (accountList.get(i).uuid.equals(tx.accountId)) {
+                    selectedFromAccountPos = i;
+                    if (acFromAccount != null)
+                        acFromAccount.setText(
+                            accountList.get(i).name + " (" + accountList.get(i).type + ")", false);
                     break;
                 }
             }
-        }
 
-        // Merchant
-        if (tx.merchantId != null && !merchantList.isEmpty()) {
-            for (int i = 0; i < merchantList.size(); i++) {
-                if (merchantList.get(i).uuid.equals(tx.merchantId)) {
-                    selectedMerchantPos = i + 1;
-                    acMerchant.setText(merchantList.get(i).name, false);
+            if (isSelf && tx.transferToAccountId != null) {
+                // ── Restore To account ────────────────────────────────────
+                for (int i = 0; i < accountList.size(); i++) {
+                    if (accountList.get(i).uuid.equals(tx.transferToAccountId)) {
+                        selectedToAccountPos = i;
+                        if (acToAccount != null)
+                            acToAccount.setText(
+                                accountList.get(i).name + " (" + accountList.get(i).type + ")", false);
+                        break;
+                    }
+                }
+            } else if (!isSelf && tx.recipientName != null) {
+                // ── Restore friend name ───────────────────────────────────
+                etFriendName.setText(tx.recipientName);
+                friendName = tx.recipientName;
+            }
+
+            // ── Restore settle category ───────────────────────────────────
+            if ("SETTLE_PAYMENT".equals(tx.transferType)
+                    && tx.categoryId != null && !categoryList.isEmpty()) {
+                for (int i = 0; i < categoryList.size(); i++) {
+                    if (categoryList.get(i).uuid.equals(tx.categoryId)) {
+                        selectedSettleCategoryPos = i + 1;
+                        acSettleCategory.setText(categoryList.get(i).name, false);
+                        break;
+                    }
+                }
+            }
+
+        } else {
+            // ── Account (income / expense) ────────────────────────────────
+            for (int i = 0; i < accountList.size(); i++) {
+                if (accountList.get(i).uuid.equals(tx.accountId)) {
+                    selectedAccountPos = i;
+                    acAccount.setText(
+                        accountList.get(i).name + " (" + accountList.get(i).type + ")", false);
                     break;
+                }
+            }
+
+            // ── Category ──────────────────────────────────────────────────
+            if (tx.categoryId != null && !categoryList.isEmpty()) {
+                for (int i = 0; i < categoryList.size(); i++) {
+                    if (categoryList.get(i).uuid.equals(tx.categoryId)) {
+                        selectedCategoryPos = i + 1;
+                        acCategory.setText(categoryList.get(i).name, false);
+                        break;
+                    }
+                }
+            }
+
+            // ── Merchant ──────────────────────────────────────────────────
+            if (tx.merchantId != null && !merchantList.isEmpty()) {
+                for (int i = 0; i < merchantList.size(); i++) {
+                    if (merchantList.get(i).uuid.equals(tx.merchantId)) {
+                        selectedMerchantPos = i + 1;
+                        acMerchant.setText(merchantList.get(i).name, false);
+                        break;
+                    }
                 }
             }
         }
@@ -385,7 +445,7 @@ public class AddTransactionFragment extends Fragment {
             view.findViewById(R.id.til_account).setVisibility(View.GONE);
             view.findViewById(R.id.til_category).setVisibility(View.GONE);
             view.findViewById(R.id.til_merchant).setVisibility(View.GONE);
-            btnSave.setText("Save Transfer");
+            btnSave.setText("Save");
         } else {
             // Show expense/income UI
             view.findViewById(R.id.ll_transfer_type).setVisibility(View.GONE);
@@ -396,7 +456,7 @@ public class AddTransactionFragment extends Fragment {
             view.findViewById(R.id.til_account).setVisibility(View.VISIBLE);
             view.findViewById(R.id.til_category).setVisibility(View.VISIBLE);
             view.findViewById(R.id.til_merchant).setVisibility(View.VISIBLE);
-            btnSave.setText("Save Transaction");
+            btnSave.setText("Save");
         }
     }
 

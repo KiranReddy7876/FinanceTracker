@@ -118,9 +118,9 @@ public class AddTransactionViewModel extends AndroidViewModel {
         }
     }
 
-    public void saveSelfTransfer(String fromAccountId, String toAccountId, 
+    public void saveSelfTransfer(String fromAccountId, String toAccountId,
                                 double amount, long date, String note) {
-        if (fromAccountId == null || fromAccountId.isEmpty() || 
+        if (fromAccountId == null || fromAccountId.isEmpty() ||
             toAccountId == null || toAccountId.isEmpty()) {
             errorMessage.setValue("Please select both accounts");
             return;
@@ -134,24 +134,37 @@ public class AddTransactionViewModel extends AndroidViewModel {
             return;
         }
 
-        Transaction t = new Transaction();
-        t.uuid = UUID.randomUUID().toString();
-        t.accountId = fromAccountId;
-        t.type = "TRANSFER";
-        t.transferType = "SELF";
-        t.transferToAccountId = toAccountId;
-        t.amount = amount;
-        t.date = date;
-        t.note = note;
-        t.createdAt = System.currentTimeMillis();
-        t.updatedAt = System.currentTimeMillis();
-        t.deleted = false;
-        
-        transactionRepo.insert(t, () -> saveSuccess.postValue(true));
+        if (editingTransaction != null) {
+            // ── UPDATE ──────────────────────────────────────────────────────
+            editingTransaction.accountId          = fromAccountId;
+            editingTransaction.type               = "TRANSFER";
+            editingTransaction.transferType       = "SELF";
+            editingTransaction.transferToAccountId = toAccountId;
+            editingTransaction.recipientName      = null;
+            editingTransaction.amount             = amount;
+            editingTransaction.date               = date;
+            editingTransaction.note               = note;
+            transactionRepo.update(editingTransaction, () -> saveSuccess.postValue(true));
+        } else {
+            // ── INSERT ──────────────────────────────────────────────────────
+            Transaction t = new Transaction();
+            t.uuid = UUID.randomUUID().toString();
+            t.accountId = fromAccountId;
+            t.type = "TRANSFER";
+            t.transferType = "SELF";
+            t.transferToAccountId = toAccountId;
+            t.amount = amount;
+            t.date = date;
+            t.note = note;
+            t.createdAt = System.currentTimeMillis();
+            t.updatedAt = System.currentTimeMillis();
+            t.deleted = false;
+            transactionRepo.insert(t, () -> saveSuccess.postValue(true));
+        }
     }
 
-    public void saveFriendTransfer(String fromAccountId, String friendName, 
-                                  String transferSubType, String categoryId, 
+    public void saveFriendTransfer(String fromAccountId, String friendName,
+                                  String transferSubType, String categoryId,
                                   double amount, long date, String note) {
         if (friendName == null || friendName.isEmpty()) {
             errorMessage.setValue("Friend's name is required");
@@ -166,21 +179,35 @@ public class AddTransactionViewModel extends AndroidViewModel {
             return;
         }
 
-        Transaction t = new Transaction();
-        t.uuid = UUID.randomUUID().toString();
-        t.accountId = fromAccountId;
-        t.type = "TRANSFER";
-        t.transferType = transferSubType;  // "LOAN_OUT", "SETTLE_PAYMENT", or "GIFT"
-        t.recipientName = friendName;
-        t.categoryId = categoryId;  // Store category for settle payment
-        t.amount = amount;
-        t.date = date;
-        t.note = note;
-        t.createdAt = System.currentTimeMillis();
-        t.updatedAt = System.currentTimeMillis();
-        t.deleted = false;
-        
-        transactionRepo.insert(t, () -> saveSuccess.postValue(true));
+        if (editingTransaction != null) {
+            // ── UPDATE ──────────────────────────────────────────────────────
+            editingTransaction.accountId           = fromAccountId;
+            editingTransaction.type                = "TRANSFER";
+            editingTransaction.transferType        = transferSubType;
+            editingTransaction.recipientName       = friendName;
+            editingTransaction.categoryId          = categoryId.isEmpty() ? null : categoryId;
+            editingTransaction.transferToAccountId = null;
+            editingTransaction.amount              = amount;
+            editingTransaction.date                = date;
+            editingTransaction.note                = note;
+            transactionRepo.update(editingTransaction, () -> saveSuccess.postValue(true));
+        } else {
+            // ── INSERT ──────────────────────────────────────────────────────
+            Transaction t = new Transaction();
+            t.uuid = UUID.randomUUID().toString();
+            t.accountId = fromAccountId;
+            t.type = "TRANSFER";
+            t.transferType = transferSubType;
+            t.recipientName = friendName;
+            t.categoryId = categoryId;
+            t.amount = amount;
+            t.date = date;
+            t.note = note;
+            t.createdAt = System.currentTimeMillis();
+            t.updatedAt = System.currentTimeMillis();
+            t.deleted = false;
+            transactionRepo.insert(t, () -> saveSuccess.postValue(true));
+        }
     }
 
     public void setEditingTransaction(Transaction t) {
