@@ -12,12 +12,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.financetracker.R;
 import com.financetracker.data.db.entity.Account;
+import java.text.NumberFormat;
 import java.util.*;
 
 public class AccountsFragment extends Fragment {
 
     private AccountsViewModel viewModel;
     private AccountAdapter adapter;
+    private final NumberFormat fmt = NumberFormat.getCurrencyInstance(new Locale("en", "IN"));
 
     @Nullable
     @Override
@@ -40,10 +42,29 @@ public class AccountsFragment extends Fragment {
         adapter = new AccountAdapter(account -> showEditDialog(account));
         rv.setAdapter(adapter);
 
+        TextView tvNetBalance   = view.findViewById(R.id.tv_net_balance);
+        TextView tvTotalSavings = view.findViewById(R.id.tv_total_savings);
+        TextView tvTotalDebt    = view.findViewById(R.id.tv_total_debt);
+
         viewModel.accounts.observe(getViewLifecycleOwner(), accounts -> adapter.submitList(accounts));
+
+        viewModel.netBalance.observe(getViewLifecycleOwner(), val ->
+            tvNetBalance.setText(formatAmount(val)));
+
+        viewModel.totalSavings.observe(getViewLifecycleOwner(), val ->
+            tvTotalSavings.setText(formatAmount(val)));
+
+        viewModel.totalDebt.observe(getViewLifecycleOwner(), val ->
+            tvTotalDebt.setText(formatAmount(val)));
 
         FloatingActionButton fab = view.findViewById(R.id.fab_add_account);
         fab.setOnClickListener(v -> showAddDialog());
+    }
+
+    private String formatAmount(Double value) {
+        if (value == null) return fmt.format(0);
+        if (value < 0) return "- " + fmt.format(Math.abs(value));
+        return fmt.format(value);
     }
 
     private void showAddDialog() {

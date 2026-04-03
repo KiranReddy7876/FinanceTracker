@@ -75,8 +75,12 @@ public class MainActivity extends AppCompatActivity {
         // 3. DrawerLayout
         drawerLayout = findViewById(R.id.drawer_layout);
 
-        // 4. AppBarConfiguration
-        appBarConfiguration = new AppBarConfiguration.Builder(R.id.dashboardFragment)
+        // 4. AppBarConfiguration — ALL bottom-nav tabs are top-level destinations
+        appBarConfiguration = new AppBarConfiguration.Builder(
+                R.id.dashboardFragment,
+                R.id.smsImportFragment,
+                R.id.reportsFragment,
+                R.id.accountsFragment)
                 .setOpenableLayout(drawerLayout)
                 .build();
 
@@ -100,6 +104,27 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Bottom nav navigation failed for: " + item.getTitle());
             }
             return navigated;
+        });
+
+        // Sync bottom nav highlight whenever the NavController destination changes
+        // (covers back-press, drawer navigation, and any programmatic navigation)
+        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            int id = destination.getId();
+            if (id == R.id.dashboardFragment
+                    || id == R.id.smsImportFragment
+                    || id == R.id.reportsFragment
+                    || id == R.id.accountsFragment) {
+                // Temporarily remove listener to avoid re-entrant navigation
+                bottomNav.setOnItemSelectedListener(null);
+                bottomNav.setSelectedItemId(id);
+                bottomNav.setOnItemSelectedListener(item -> {
+                    boolean navigated = NavigationUI.onNavDestinationSelected(item, navController);
+                    if (!navigated) {
+                        Log.e(TAG, "Bottom nav navigation failed for: " + item.getTitle());
+                    }
+                    return navigated;
+                });
+            }
         });
 
         // 7. Back press — close the drawer if open, otherwise normal back
